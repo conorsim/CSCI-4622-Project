@@ -1,4 +1,4 @@
-# CSCI-4622-Project
+# CSCI 4622 Machine Learning Project
 
 ### Tutorial
 
