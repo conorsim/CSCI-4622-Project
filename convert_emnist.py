@@ -131,4 +131,10 @@ Xtest, ytest = loadlocal_mnist(
 if not os.path.exists(os.getcwd()+'/feature_representations'):
     os.system('mkdir feature_representations/')
 
+if not os.path.exists(os.getcwd()+'/feature_representations/ytrain.npy'):
+    np.save(os.getcwd()+'/feature_representations/ytrain.npy', ytrain)
+
+if not os.path.exists(os.getcwd()+'/feature_representations/ytest.npy'):
+    np.save(os.getcwd()+'/feature_representations/ytest.npy', ytest)
+
 func(Xtrain, Xtest)
