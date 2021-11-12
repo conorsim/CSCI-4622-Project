@@ -2,10 +2,6 @@
 File for conversions of the EMNIST dataset to different feature representations
 
 arguments:
--Xtr: path to training dataset images
--ytr: path to training dataset labels
--Xte: path to test dataset images
--yte: path to test dataset labels
 -v: version of feature representation
 """
 
