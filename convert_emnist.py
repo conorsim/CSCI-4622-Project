@@ -18,6 +18,10 @@ parser = argparse.ArgumentParser()
 parser.add_argument('-v', '--version', required=True, type=int, default=6, help="Version of feature representation")
 args = parser.parse_args()
 
+# helper function to get a moment
+def moment(it, jt, p, q):
+    return np.sum(it**p * jt**q)
+
 ###########################
 
 """
@@ -44,7 +48,7 @@ def feature_transform_1(X_train, X_test):
             str = 'test'
             X = X_test
         FR = np.zeros((X.shape[0], 18))
-        write_path = os.getcwd()+f'/feature_representations/feature_representation_1_{str}.npy'
+        write_path = os.getcwd()+f'/feature_representations/feature_representation_{args.version}_{str}.npy'
         with open(write_path, 'w') as csvfile:
             incr = X.shape[0] // 10
             for j in range(X.shape[0]):
@@ -107,6 +111,113 @@ def feature_transform_1(X_train, X_test):
                 norm_FR[:, k] = new_col
             np.save(write_path, norm_FR)
 
+"""
+Feature representation 2:
+
+Columns are...
+0 - area
+1 - perimeter
+2 - radius mean
+3 - radius std
+4 - theta mean
+5 - theta std
+6 - range in x direction
+7 - range in y direction
+8-16 - all combinations of 1-3 degree moments
+"""
+
+def feature_transform_2(X_train, X_test):
+    for i in range(2):
+        if i == 0:
+            str = 'train'
+            X = X_train
+        else:
+            str = 'test'
+            X = X_test
+        FR = np.zeros((X.shape[0], 17))
+        write_path = os.getcwd()+f'/feature_representations/feature_representation_{args.version}_{str}.npy'
+        with open(write_path, 'w') as csvfile:
+            incr = X.shape[0] // 10
+            for j in range(X.shape[0]):
+                # print statement to view progress
+                if j % incr == 0 and i == 0: print(f"{round(100*(j/X.shape[0]), 2)}% of the way through the training set")
+                if j % incr == 0 and i == 1: print(f"{round(100*(j/X.shape[0]), 2)}% of the way through the testing set")
+
+                # get binary image and binary image outline
+                x = X[j,:].reshape(28,28)
+                x = np.divide(x, 255.)
+                t = threshold_otsu(x)
+                x = np.where(x < t, 0, 1)
+                er = binary_erosion(x)
+                x_er = x - er
+
+                # find area and permiter of binary image
+                area = np.sum(x)
+                perimeter = np.sum(x_er)
+
+                # tranform coordinates of binary image to relative polar coordinates
+                ii, jj = np.where(x_er == 1)
+                it = ii / 28
+                jt = jj / 28
+                cen = np.mean(it), np.mean(jt)
+                it = it - cen[0]
+                jt = jt - cen[1]
+                r = [np.sqrt(k**2 + l**2) for k,l in list(zip(it, jt))]
+                theta = [np.arctan(l/k) if k!= 0 else 0 for k,l in list(zip(it, jt))]
+
+                # find mean and standard deviation of polar coordinates
+                r_mean = np.mean(r)
+                r_std = np.std(r, ddof=1)
+                theta_mean = np.mean(theta)
+                theta_std = np.std(theta, ddof=1)
+
+                # find the ranges in x and y direction
+                x_range = np.max(jt) - np.min(jt)
+                y_range = np.max(it) - np.min(it)
+
+                # find the 2 kinds of first degree moments
+                m1 = moment(it, jt, 0, 1)
+                m2 = moment(it, jt, 1, 0)
+
+                # find the 3 kinds of second degree moments
+                m3 = moment(it, jt, 1, 1)
+                m4 = moment(it, jt, 2, 0)
+                m5 = moment(it, jt, 0, 2)
+
+                # find the 4 kinds of third degree moments
+                m6 = moment(it, jt, 1, 2)
+                m7 = moment(it, jt, 2, 1)
+                m8 = moment(it, jt, 0, 3)
+                m9 = moment(it, jt, 3, 0)
+
+                # represent features as numpy array
+                FR[j, 0] = area
+                FR[j, 1] = perimeter
+                FR[j, 2] = r_mean
+                FR[j, 3] = r_std
+                FR[j, 4] = theta_mean
+                FR[j, 5] = theta_std
+                FR[j, 6] = x_range
+                FR[j, 7] = y_range
+                FR[j, 8] = m1
+                FR[j, 9] = m2
+                FR[j, 10] = m3
+                FR[j, 11] = m4
+                FR[j, 12] = m5
+                FR[j, 13] = m6
+                FR[j, 14] = m7
+                FR[j, 15] = m8
+                FR[j, 16] = m9
+
+            # normalize features and write to np array
+            print("Writing to disk")
+            norm_FR = np.zeros(FR.shape)
+            for k in range(FR.shape[1]):
+                col = FR[:, k]
+                new_col = (col - np.mean(col)) / np.std(col, ddof=1)
+                norm_FR[:, k] = new_col
+            np.save(write_path, norm_FR)
+
 ###########################
 
 versions = [1]
@@ -115,7 +226,7 @@ try:
 except ValueError:
     print(f"Version {args.version} is not supported. Supported versions are {versions}")
 
-funcs = [feature_transform_1]
+funcs = [feature_transform_1, feature_transform_2]
 func = funcs[args.version - 1]
 
 print(f"Converting data to feature representation {args.version}")
