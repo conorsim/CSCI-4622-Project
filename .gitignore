@@ -1,3 +1,5 @@
 emnist/
 emnist.zip
 feature_representations/
+notebooks/.ipynb_checkpoints/
+models/
