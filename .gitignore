@@ -3,3 +3,5 @@ emnist.zip
 feature_representations/
 notebooks/.ipynb_checkpoints/
 models/
+notebooks/feature_representation_3.ipynb
+notebooks/PCA.ipynb
